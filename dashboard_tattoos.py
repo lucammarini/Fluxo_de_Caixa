@@ -29,6 +29,8 @@ import numpy as np
 from IPython.display import clear_output 
 import matplotlib.image as mpimg
 from matplotlib import rcParams
+from IPython.display import Image, display
+import seaborn as sns
 
 """##**FUNÇÕES**"""
 
@@ -38,7 +40,7 @@ def addlabels(x,y):
         plt.text(i,round(y[i],2),round(y[i],2), ha = 'center',
                  Bbox = dict(facecolor = 'red', alpha =.2))
 
-def plotagem_graficos_e_tabelas():
+def plotagem_graficos():
 
   # figure size in inches optional
   c = 2.6  # multiplicador de tamanho da img
@@ -47,7 +49,8 @@ def plotagem_graficos_e_tabelas():
   # read images
   img_A = mpimg.imread('/content/drive/MyDrive/Tattoos/Financeiro/Imagens/Cumulativo_Graph.png')
   img_B = mpimg.imread('/content/drive/MyDrive/Tattoos/Financeiro/Imagens/Somatório_Graph.png')
-  img_C = mpimg.imread('/content/drive/MyDrive/Tattoos/Financeiro/Imagens/Somatório_Ganho_Preju_Graph.png')
+  img_C = mpimg.imread('/content/drive/MyDrive/Tattoos/Financeiro/Imagens/Ganho_Preju_Graph.png')
+  # img_D = mpimg.imread('/content/drive/MyDrive/Tattoos/Financeiro/Imagens/tabela.png')
 
   # display images
   fig, ax = plt.subplots(1,3)
@@ -60,6 +63,9 @@ def plotagem_graficos_e_tabelas():
 
   ax[2].imshow(img_C)
   ax[2].axis('off')
+
+def plotagem_tabelas():
+  display(Image("/content/drive/MyDrive/Tattoos/Financeiro/Imagens/tabela.png", width=900, height=400))
 
 """##**TRATAMENTO DE DADOS**"""
 
@@ -95,7 +101,7 @@ df_fin.head()
 
 # Separa a soma por mês em um novo dataframe:
 df_resumo = df_fin.groupby(pd.Grouper(freq='M')).sum()
-df_resumo.columns = ['Somatório','Somatório_Ganho','Somatório_Preju']
+df_resumo.columns = ['Somatório','Ganho','Preju']
 
 # Coluna de valores cumulativos:
 df_resumo['Cumulativo'] = df_resumo['Somatório'].cumsum()
@@ -124,7 +130,7 @@ x = np.arange(len(df_resumo['MesAno']))  # the label locations
 width = 0.5  # the width of the bars
 
 for n in df_resumo.columns:
-  if ((n == 'MesAno')|(n == 'Somatório_Preju')):
+  if ((n == 'MesAno')|(n == 'Preju')):
     pass
   elif n == 'Somatório':
     with plt.style.context('Solarize_Light2'):
@@ -153,28 +159,26 @@ for n in df_resumo.columns:
     plt.savefig(os.path.join( '/content/drive/MyDrive/Tattoos/Financeiro/Imagens' , n  + '_Graph'), dpi=300, bbox_inches='tight')
     plt.show()
   
-  elif n == 'Somatório_Ganho':
+  elif n == 'Ganho':
     with plt.style.context('Solarize_Light2'):
       # plt.plot(df_resumo['MesAno'], df_resumo[n] , linewidth=2.0)
-      colorsg = ["tomato" if i < 0 else "yellowgreen" for i in df_resumo['Somatório_Ganho']]
-      colorsp = ["tomato" if i < 0 else "yellowgreen" for i in df_resumo['Somatório_Preju']]
-      plt.bar(x - width/2, df_resumo['Somatório_Ganho'], width,color=colorsg, label=n)
-      plt.bar(x - width/2, df_resumo['Somatório_Preju'], width,color=colorsp, label=n)
+      colorsg = ["tomato" if i < 0 else "yellowgreen" for i in df_resumo['Ganho']]
+      colorsp = ["tomato" if i < 0 else "yellowgreen" for i in df_resumo['Preju']]
+      plt.bar(x - width/2, df_resumo['Ganho'], width,color=colorsg, label=n)
+      plt.bar(x - width/2, df_resumo['Preju'], width,color=colorsp, label=n)
       plt.title('Acompanhamento Financeiro - Tatuagens')
       plt.xlabel('Mês', fontsize=14)
       plt.xticks(rotation = 45) # Rotates X-Axis Ticks by 45-degrees
       plt.ylabel( 'Ganhos e Perdas' , fontsize=14)
       plt.xticks(x, list(df_resumo['MesAno']))  # passo de tempo
-      addlabels(df_resumo['MesAno'], df_resumo['Somatório_Ganho'])
-      addlabels(df_resumo['MesAno'], df_resumo['Somatório_Preju'])
+      addlabels(df_resumo['MesAno'], df_resumo['Ganho'])
+      addlabels(df_resumo['MesAno'], df_resumo['Preju'])
     plt.savefig(os.path.join( '/content/drive/MyDrive/Tattoos/Financeiro/Imagens' , n  + '_Preju_Graph'), dpi=300, bbox_inches='tight')
     plt.show()
 
 clear_output()
 
 """### **GERAÇÃO DE TABELAS**"""
-
-import seaborn as sns
 
 df_resumo_fancy = df_resumo
 
@@ -208,13 +212,24 @@ cm = sns.light_palette("green", as_cmap=True)
   .format(precision=2)
   .set_table_styles(styles))
 
+import dataframe_image as dfi
+dfi.export(df_resumo_fancy, "/content/drive/MyDrive/Tattoos/Financeiro/Imagens/tabela.png",table_conversion="matplotlib")
+clear_output()
 
-
-"""### **Plot de gráficos e tabelas:**"""
+"""## **Plot de gráficos e tabelas:**"""
 
 # Commented out IPython magic to ensure Python compatibility.
 # %matplotlib inline
-plotagem_graficos_e_tabelas()
+plotagem_graficos()
+
+plotagem_tabelas()
+
+(df_resumo_fancy.style
+  .background_gradient(cmap=cm, subset=['Somatório','Cumulativo'])
+  .hide_index()
+  .set_caption('Informações Relevantes - Ganho e Custos da Tattoo')
+  .format(precision=2)
+  .set_table_styles(styles))
 
 """##**FINALIZAÇÃO DO SCRIPT**"""
 
