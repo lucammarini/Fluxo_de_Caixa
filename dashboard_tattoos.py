@@ -22,30 +22,57 @@ start_script = time.time()
 # Importa as bibliotecas necessárias
 from datetime import datetime, date
 import pandas as pd
+import os
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import numpy as np
+from IPython.display import clear_output 
+import matplotlib.image as mpimg
+from matplotlib import rcParams
 
 """##**FUNÇÕES**"""
 
-# function to add value labels
+# função pra adicionar texto nos graficos, com o valor pontual:
 def addlabels(x,y):
     for i in range(len(x)):
         plt.text(i,round(y[i],2),round(y[i],2), ha = 'center',
                  Bbox = dict(facecolor = 'red', alpha =.2))
 
+def plotagem_graficos_e_tabelas():
+
+  # figure size in inches optional
+  c = 2.6  # multiplicador de tamanho da img
+  rcParams['figure.figsize'] = 11*c , 8*c
+
+  # read images
+  img_A = mpimg.imread('/content/drive/MyDrive/Tattoos/Financeiro/Imagens/Cumulativo_Graph.png')
+  img_B = mpimg.imread('/content/drive/MyDrive/Tattoos/Financeiro/Imagens/Somatório_Graph.png')
+  img_C = mpimg.imread('/content/drive/MyDrive/Tattoos/Financeiro/Imagens/Somatório_Ganho_Preju_Graph.png')
+
+  # display images
+  fig, ax = plt.subplots(1,3)
+
+  ax[0].imshow(img_A)
+  ax[0].axis('off')
+
+  ax[1].imshow(img_B)
+  ax[1].axis('off')
+
+  ax[2].imshow(img_C)
+  ax[2].axis('off')
+
 """##**TRATAMENTO DE DADOS**"""
 
 # Dados crus para dataframe:
 caminho_dados_financeiros = '/content/drive/MyDrive/Tattoos/Financeiro/Fluxo de Caixa CSV.csv'
-df_fin = pd.read_csv(caminho_dados_financeiros, sep = ';', header = 1)
+df_fin = pd.read_csv(caminho_dados_financeiros, sep = ';', header = 0)
 df_fin = df_fin.fillna('')
 
 # removendo espaços vazios:
-df_fin = df_fin.drop(df_fin[df_fin.Valor == "R$ 0,00"].index)
+df_fin = df_fin.drop(df_fin[df_fin.Valor == "R$0,00"].index)
 
 # Traduzindo coluna Valor (string) em Valor (decimal):
-df_fin['Valor'] = df_fin['Valor'].str.replace('R$ ','',regex=False)
+df_fin['Valor'] = df_fin['Valor'].str.replace('R$','',regex=False)
 df_fin['Valor'] = df_fin['Valor'].str.replace('.','',regex=False)
 df_fin['Valor'] = df_fin['Valor'].str.replace(',','.',regex=False)
 df_fin['Valor'] = df_fin['Valor'].astype(float)
@@ -86,7 +113,10 @@ df_resumo
 df_resumo = df_resumo.drop(df_resumo[df_resumo.index > pd.to_datetime(date.today())].index)
 df_resumo
 
-"""##**GERAÇÃO DE GRÁFICOS**"""
+"""##**GERAÇÃO DE GRÁFICOS E TABELAS**
+
+### **GERAÇÃO DE GRÁFICOS**
+"""
 
 # Montando Gráficos:
 
@@ -107,6 +137,7 @@ for n in df_resumo.columns:
       plt.ylabel( n , fontsize=14)
       plt.xticks(x, list(df_resumo['MesAno']))  # passo de tempo
       addlabels(df_resumo['MesAno'], df_resumo[n])
+    plt.savefig(os.path.join( '/content/drive/MyDrive/Tattoos/Financeiro/Imagens' , n  + '_Graph'), dpi=300, bbox_inches='tight')
     plt.show()
 
   elif n == 'Cumulativo':
@@ -119,6 +150,7 @@ for n in df_resumo.columns:
       plt.ylabel( n , fontsize=14)
       plt.xticks(x, list(df_resumo['MesAno']))  # passo de tempo
       addlabels(df_resumo['MesAno'], df_resumo[n])
+    plt.savefig(os.path.join( '/content/drive/MyDrive/Tattoos/Financeiro/Imagens' , n  + '_Graph'), dpi=300, bbox_inches='tight')
     plt.show()
   
   elif n == 'Somatório_Ganho':
@@ -135,7 +167,54 @@ for n in df_resumo.columns:
       plt.xticks(x, list(df_resumo['MesAno']))  # passo de tempo
       addlabels(df_resumo['MesAno'], df_resumo['Somatório_Ganho'])
       addlabels(df_resumo['MesAno'], df_resumo['Somatório_Preju'])
+    plt.savefig(os.path.join( '/content/drive/MyDrive/Tattoos/Financeiro/Imagens' , n  + '_Preju_Graph'), dpi=300, bbox_inches='tight')
     plt.show()
+
+clear_output()
+
+"""### **GERAÇÃO DE TABELAS**"""
+
+import seaborn as sns
+
+df_resumo_fancy = df_resumo
+
+
+# Set CSS properties for th elements in dataframe
+th_props = [
+  ('font-size', '16px'),
+  ('text-align', 'center'),
+  ('font-weight', 'bold'),
+  ('color', 'black'),
+  ('background-color', '#f7f7f9')
+  ]
+
+# Set CSS properties for td elements in dataframe
+td_props = [
+  ('font-size', '16px')
+  ]
+
+# Set table styles
+styles = [
+  dict(selector="th", props=th_props),
+  dict(selector="td", props=td_props)
+  ]
+
+cm = sns.light_palette("green", as_cmap=True)
+
+(df_resumo_fancy.style
+  .background_gradient(cmap=cm, subset=['Somatório','Cumulativo'])
+  .hide_index()
+  .set_caption('Informações Relevantes - Ganho e Custos da Tattoo')
+  .format(precision=2)
+  .set_table_styles(styles))
+
+
+
+"""### **Plot de gráficos e tabelas:**"""
+
+# Commented out IPython magic to ensure Python compatibility.
+# %matplotlib inline
+plotagem_graficos_e_tabelas()
 
 """##**FINALIZAÇÃO DO SCRIPT**"""
 
